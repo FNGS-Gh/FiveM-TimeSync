@@ -6,18 +6,13 @@ import {
   WHOLE_DAY
 } from '../shared/utils';
 
-const MAX_TIME_OFFSET = 10; // -> Seconds
-
-// The bigger your ratio is (e.g. 1 IRL second = 60 in-game seconds), the smaller the interval you need to set.
-// And therefore the smaller your ratio, the bigger the interval can be.
-// For ratios above 40, I recommend to set the interval as 3000 ms.
-// Ratios around 5 can do just fine with a 20000+ ms interval.
-const CHECK_INTERVAL = 10000;
+const MAX_TIME_OFFSET = 10;   // -> Seconds
+const CHECK_INTERVAL = 5000;  // -> Milliseconds
 
 let currentPayload: SyncPayload | null = null;
 let lastRatio = 1;
 
-const Delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+const frozenTime = { h: 0, m: 0, s: 0 };
 
 const GetTotalGameTime = (): number => {
   const h = GetClockHours();
@@ -31,7 +26,7 @@ const UpdateClockSpeed = (ratio: number) => {
   lastRatio = Math.abs(ratio) | 0;
 
   const ms = ((60 / ratio) * 1000) | 0;
-  NetworkOverrideClockMillisecondsPerGameMinute(ms);
+  //NetworkOverrideClockMillisecondsPerGameMinute(ms);
 };
 
 const ApplyClockTime = (totalSeconds: number, ratio: number) => {
@@ -60,20 +55,28 @@ onNet('TimeSync:clientSync', (payload: SyncPayload) => {
     );
   
   const activeRatio = payload.frozen
-    ? 1
+    ? 30
     : isDaytime(expectedSec)
     ? payload.dayRatio
     : payload.nightRatio;
+
+  if (payload.frozen)
+    Object.assign(frozenTime, getTimeToHMS(payload.baseTimeInSec));
 
   ApplyClockTime(expectedSec, activeRatio);
 });
 
 // Game Threads:
-setTick(async () => {
-  if (!currentPayload || currentPayload.frozen) {
-    await Delay(1000);
-    return;
-  }
+setTick(() => {
+  if (currentPayload?.frozen) NetworkOverrideClockTime(
+    frozenTime.h,
+    frozenTime.m,
+    frozenTime.s
+  );
+});
+
+setInterval(() => {
+  if (!currentPayload || currentPayload.frozen) return;
 
   const expectedSec = calculateCurrentTime(
     currentPayload.baseTimeInSec,
@@ -96,27 +99,25 @@ setTick(async () => {
   if (diff > MAX_TIME_OFFSET) {
     ApplyClockTime(expectedSec, activeRatio);
 
-    if (diff >= MAX_TIME_OFFSET * 2)
+    if (diff >= MAX_TIME_OFFSET * 1.5)
       emitNet('TimeSync:requestSync');
   }
-
-  await Delay(CHECK_INTERVAL);
-});
+}, CHECK_INTERVAL);
 
 // tmp
-setTick(() => {
-  const hour = GetClockHours();
-  const minute = GetClockMinutes();
-  const second = GetClockSeconds();
+// setTick(() => {
+//   const hour = GetClockHours();
+//   const minute = GetClockMinutes();
+//   const second = GetClockSeconds();
 
-  const text = `${hour}:${minute}:${second}`;
+//   const text = `${hour}:${minute}:${second}`;
 
-  SetTextFont(4);
-  SetTextScale(0.5, 0.5);
-  SetTextColour(255, 255, 255, 255);
-  SetTextOutline();
-  SetTextEntry("STRING");
-  AddTextComponentString(text);
+//   SetTextFont(4);
+//   SetTextScale(0.5, 0.5);
+//   SetTextColour(255, 255, 255, 255);
+//   SetTextOutline();
+//   SetTextEntry("STRING");
+//   AddTextComponentString(text);
   
-  DrawText(0.88, 0.88);
-});
+//   DrawText(0.88, 0.88);
+// });
