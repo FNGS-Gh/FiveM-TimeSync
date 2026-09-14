@@ -26,7 +26,7 @@ const UpdateClockSpeed = (ratio: number) => {
   lastRatio = Math.abs(ratio) | 0;
 
   const ms = ((60 / ratio) * 1000) | 0;
-  //NetworkOverrideClockMillisecondsPerGameMinute(ms);
+  NetworkOverrideClockMillisecondsPerGameMinute(ms);
 };
 
 const ApplyClockTime = (totalSeconds: number, ratio: number) => {
@@ -103,21 +103,3 @@ setInterval(() => {
       emitNet('TimeSync:requestSync');
   }
 }, CHECK_INTERVAL);
-
-// tmp
-// setTick(() => {
-//   const hour = GetClockHours();
-//   const minute = GetClockMinutes();
-//   const second = GetClockSeconds();
-
-//   const text = `${hour}:${minute}:${second}`;
-
-//   SetTextFont(4);
-//   SetTextScale(0.5, 0.5);
-//   SetTextColour(255, 255, 255, 255);
-//   SetTextOutline();
-//   SetTextEntry("STRING");
-//   AddTextComponentString(text);
-  
-//   DrawText(0.88, 0.88);
-// });

@@ -98,9 +98,3 @@ globalThis.exports('ToggleFrozen', (): boolean => {
   BroadcastSync(-1);
   return state;
 });
-
-// tmp
-RegisterCommand('freeze', (source: number, args: string[]) => {
-  Time.toggleFrozen();
-  BroadcastSync(-1);
-}, false);
