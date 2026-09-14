@@ -11,11 +11,13 @@ const MAX_TIME_OFFSET = 10; // -> Seconds
 // The bigger your ratio is (e.g. 1 IRL second = 60 in-game seconds), the smaller the interval you need to set.
 // And therefore the smaller your ratio, the bigger the interval can be.
 // For ratios above 40, I recommend to set the interval as 3000 ms.
-// Ratios around 5 can do just fine with a 20000+ ms interval.
+// Ratios around 5 can do just fine with a 20000 ms interval.
 const CHECK_INTERVAL = 10000;
 
 let currentPayload: SyncPayload | null = null;
 let lastRatio = 1;
+
+const frozenTime = { h: 0, m: 0, s: 0 };
 
 const Delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -60,18 +62,29 @@ onNet('TimeSync:clientSync', (payload: SyncPayload) => {
     );
   
   const activeRatio = payload.frozen
-    ? 1
+    ? 30
     : isDaytime(expectedSec)
     ? payload.dayRatio
     : payload.nightRatio;
+
+  if (payload.frozen)
+    Object.assign(frozenTime, getTimeToHMS(payload.baseTimeInSec));
 
   ApplyClockTime(expectedSec, activeRatio);
 });
 
 // Game Threads:
+setTick(() => {
+  if (currentPayload?.frozen) NetworkOverrideClockTime(
+    frozenTime.h,
+    frozenTime.m,
+    frozenTime.s
+  );
+});
+
 setTick(async () => {
   if (!currentPayload || currentPayload.frozen) {
-    await Delay(1000);
+    await Delay(250);
     return;
   }
 
@@ -96,7 +109,7 @@ setTick(async () => {
   if (diff > MAX_TIME_OFFSET) {
     ApplyClockTime(expectedSec, activeRatio);
 
-    if (diff >= MAX_TIME_OFFSET * 2)
+    if (diff >= MAX_TIME_OFFSET * 1.5)
       emitNet('TimeSync:requestSync');
   }
 

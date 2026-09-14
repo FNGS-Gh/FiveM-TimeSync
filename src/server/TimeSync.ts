@@ -101,4 +101,5 @@ globalThis.exports('ToggleFrozen', (): boolean => {
 
 RegisterCommand('freeze', (source: number, args: string[]) => {
   Time.toggleFrozen();
+  BroadcastSync(-1);
 }, false);
