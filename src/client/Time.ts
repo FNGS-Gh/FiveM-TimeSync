@@ -6,8 +6,11 @@ import {
   WHOLE_DAY
 } from '../shared/utils';
 
-const MAX_TIME_OFFSET = 10; // -> Seconds
+// The value is set in seconds
+// The lesser the better, but 10 seconds offset is close to perfect, and it won't trigger any visible twitching effects on sky map.
+const MAX_TIME_OFFSET = 10;
 
+// The value is set in milliseconds
 // The bigger your ratio is (e.g. 1 IRL second = 60 in-game seconds), the smaller the interval you need to set.
 // And therefore the smaller your ratio, the bigger the interval can be.
 // For ratios above 40, I recommend to set the interval as 3000 ms.
