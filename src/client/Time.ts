@@ -120,19 +120,19 @@ setTick(async () => {
 });
 
 // tmp
-setTick(() => {
-  const hour = GetClockHours();
-  const minute = GetClockMinutes();
-  const second = GetClockSeconds();
+// setTick(() => {
+//   const hour = GetClockHours();
+//   const minute = GetClockMinutes();
+//   const second = GetClockSeconds();
 
-  const text = `${hour}:${minute}:${second}`;
+//   const text = `${hour}:${minute}:${second}`;
 
-  SetTextFont(4);
-  SetTextScale(0.5, 0.5);
-  SetTextColour(255, 255, 255, 255);
-  SetTextOutline();
-  SetTextEntry("STRING");
-  AddTextComponentString(text);
+//   SetTextFont(4);
+//   SetTextScale(0.5, 0.5);
+//   SetTextColour(255, 255, 255, 255);
+//   SetTextOutline();
+//   SetTextEntry("STRING");
+//   AddTextComponentString(text);
   
-  DrawText(0.88, 0.88);
-});
+//   DrawText(0.88, 0.88);
+// });
