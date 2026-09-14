@@ -10,25 +10,25 @@ The script also implements a fairly optimized solution to the in-game sky map "t
 *More details can be found below under the* **"2. Description"** *section ▼*
 
 ## 1. Installation
-
-The script can be installed via two possible ways, depending on the developer's needs (options **A** and **B** onwards).
-
-### A. Pure JavaScript:
-
-If you don't use TypeScript for your project, and you don't care about the explanation comments within the source code, you only need to copy the following files and folders (and their content respectively) into your resource module:
-
-```
-/dist
-fxmanifest.lua
-```
-
-The `/src` folder is used solely for the source TypeSript files, which are eventually built into the ready-to-use files inside the `/dist` folder.
+❗️ This project is published under the MIT License. Upon using it, please make sure to keep the credits and apply the same type of license.
 
 ---
 
-### B. TypeScript:
+If you don't care about the code readability and you just want to deploy the resource straight away, you can delete everything except of the following files and folders (and their content respectively):
 
-For my projects, I use the "monorepo" approach, storing a single builder script within the root directory. Thus, make sure to prepare your FiveM resources environment accordingly. To use the TypeScript source files, you need to clone the whole repo. Also make sure that you have the `@citizenfx` packages:
+```
+fxmanifest.lua
+config.json
+dist/
+```
+
+The `config.json` file can be modified anytime with no need to rebuild the scripts.
+
+---
+
+If you want to modify the code, you'll find the source TypeScript files within the `src/` folder. Please note that this repo doesn't contain any TS builder and etc, so you'll need to set up your dev environment accordingly.
+
+Also make sure that you have the `@citizenfx` packages:
 
 ```
 npm install -D typescript @citizenfx/client @citizenfx/server
