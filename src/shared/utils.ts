@@ -12,9 +12,10 @@ export interface SyncPayload {
   frozen: boolean;
 }
 
+// Don't change these: they are always similar.
 export const WHOLE_DAY = 86400; // 24 * 3600
-export const SUNRISE = 19800;   // 05:30 (5.5 * 3600)
-export const SUNSET = 72000;    // 20:00 (20.0 * 3600)
+export const SUNRISE = 19800;   // 05:30 in-game sunrise time (5.5 * 3600)
+export const SUNSET = 72000;    // 20:00 in-game sunset time (20.0 * 3600)
 
 export const normalizeTotal = (totalSeconds: number): number =>
   ((totalSeconds % WHOLE_DAY) + WHOLE_DAY) % WHOLE_DAY;
