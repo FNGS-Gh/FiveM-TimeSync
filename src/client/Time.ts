@@ -6,23 +6,13 @@ import {
   WHOLE_DAY
 } from '../shared/utils';
 
-// The value is set in seconds
-// The lesser the better, but 10 seconds offset is close to perfect, and it won't trigger any visible twitching effects on sky map.
-const MAX_TIME_OFFSET = 10;
-
-// The value is set in milliseconds
-// The bigger your ratio is (e.g. 1 IRL second = 60 in-game seconds), the smaller the interval you need to set.
-// And therefore the smaller your ratio, the bigger the interval can be.
-// For ratios above 40, I recommend to set the interval as 3000 ms.
-// Ratios around 5 can do just fine with a 20000 ms interval.
-const CHECK_INTERVAL = 10000;
+const MAX_TIME_OFFSET = 10;   // -> Seconds
+const CHECK_INTERVAL = 5000;  // -> Milliseconds
 
 let currentPayload: SyncPayload | null = null;
 let lastRatio = 1;
 
 const frozenTime = { h: 0, m: 0, s: 0 };
-
-const Delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 const GetTotalGameTime = (): number => {
   const h = GetClockHours();
@@ -36,7 +26,7 @@ const UpdateClockSpeed = (ratio: number) => {
   lastRatio = Math.abs(ratio) | 0;
 
   const ms = ((60 / ratio) * 1000) | 0;
-  NetworkOverrideClockMillisecondsPerGameMinute(ms);
+  //NetworkOverrideClockMillisecondsPerGameMinute(ms);
 };
 
 const ApplyClockTime = (totalSeconds: number, ratio: number) => {
@@ -85,11 +75,8 @@ setTick(() => {
   );
 });
 
-setTick(async () => {
-  if (!currentPayload || currentPayload.frozen) {
-    await Delay(250);
-    return;
-  }
+setInterval(() => {
+  if (!currentPayload || currentPayload.frozen) return;
 
   const expectedSec = calculateCurrentTime(
     currentPayload.baseTimeInSec,
@@ -115,9 +102,7 @@ setTick(async () => {
     if (diff >= MAX_TIME_OFFSET * 1.5)
       emitNet('TimeSync:requestSync');
   }
-
-  await Delay(CHECK_INTERVAL);
-});
+}, CHECK_INTERVAL);
 
 // tmp
 // setTick(() => {
