@@ -1,17 +1,106 @@
-import { ClientTime, getTimeToHMS } from '../shared/utils';
+import {
+  SyncPayload,
+  getTimeToHMS,
+  calculateCurrentTime,
+  isDaytime,
+  WHOLE_DAY
+} from '../shared/utils';
 
-on('onClientMapStart', () => {
-  emitNet('TimeSync:init');
-});
+const MAX_TIME_OFFSET = 10; // -> Seconds
 
-onNet('TimeSync:ratio', (ratio: number) => {
+// The bigger your ratio is (e.g. 1 IRL second = 60 in-game seconds), the smaller the interval you need to set.
+// And therefore the smaller your ratio, the bigger the interval can be.
+// For ratios above 40, I recommend to set the interval as 3000 ms.
+// Ratios around 5 can do just fine with a 20000+ ms interval.
+const CHECK_INTERVAL = 10000;
+
+let currentPayload: SyncPayload | null = null;
+let lastRatio = 1;
+
+const Delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+const GetTotalGameTime = (): number => {
+  const h = GetClockHours();
+  const m = GetClockMinutes();
+  const s = GetClockSeconds();
+  return h * 3600 + m * 60 + s;
+};
+
+const UpdateClockSpeed = (ratio: number) => {
+  if (lastRatio === ratio) return;
+  lastRatio = Math.abs(ratio) | 0;
+
   const ms = ((60 / ratio) * 1000) | 0;
   NetworkOverrideClockMillisecondsPerGameMinute(ms);
+};
+
+const ApplyClockTime = (totalSeconds: number, ratio: number) => {
+  UpdateClockSpeed(ratio);
+  
+  const { h, m, s } = getTimeToHMS(totalSeconds);
+  NetworkOverrideClockTime(h, m, s);
+};
+
+// Client Events:
+on('onClientMapStart', () => {
+  emitNet('TimeSync:requestSync');
 });
 
-onNet('TimeSync:update', (totalSeconds: number) => {
-  const { h, m, s }: ClientTime = getTimeToHMS(totalSeconds);
-  NetworkOverrideClockTime(h, m, s);
+// Network Events:
+onNet('TimeSync:clientSync', (payload: SyncPayload) => {
+  currentPayload = payload;
+
+  const expectedSec = payload.frozen
+    ? payload.baseTimeInSec
+    : calculateCurrentTime(
+      payload.baseTimeInSec,
+      payload.startedAtStamp,
+      payload.dayRatio,
+      payload.nightRatio
+    );
+  
+  const activeRatio = payload.frozen
+    ? 1
+    : isDaytime(expectedSec)
+    ? payload.dayRatio
+    : payload.nightRatio;
+
+  ApplyClockTime(expectedSec, activeRatio);
+});
+
+// Game Threads:
+setTick(async () => {
+  if (!currentPayload || currentPayload.frozen) {
+    await Delay(1000);
+    return;
+  }
+
+  const expectedSec = calculateCurrentTime(
+    currentPayload.baseTimeInSec,
+    currentPayload.startedAtStamp,
+    currentPayload.dayRatio,
+    currentPayload.nightRatio
+  );
+
+  const activeRatio = isDaytime(expectedSec)
+    ? currentPayload.dayRatio
+    : currentPayload.nightRatio;
+
+  UpdateClockSpeed(activeRatio);
+
+  const actualSec = GetTotalGameTime();
+  
+  let diff = Math.abs(expectedSec - actualSec);
+  if (diff > WHOLE_DAY / 2) diff = WHOLE_DAY - diff;
+
+  if (diff > MAX_TIME_OFFSET) {
+    ApplyClockTime(expectedSec, activeRatio);
+
+    if (diff >= MAX_TIME_OFFSET * 2)
+      emitNet('TimeSync:requestSync');
+  }
+
+  await Delay(CHECK_INTERVAL);
 });
 
 // tmp
@@ -29,5 +118,5 @@ setTick(() => {
   SetTextEntry("STRING");
   AddTextComponentString(text);
   
-  DrawText(0.88, 0.88)
+  DrawText(0.88, 0.88);
 });

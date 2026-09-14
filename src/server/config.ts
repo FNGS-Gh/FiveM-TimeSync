@@ -4,7 +4,8 @@ interface TimeConfig {
     m: number;
     s: number;
   };
-  ratio: number;
+  dayRatio: number;
+  nightRatio: number;
 }
 
 const DEFAULT_CONFIG: TimeConfig = {
@@ -13,7 +14,8 @@ const DEFAULT_CONFIG: TimeConfig = {
     m: 0,
     s: 0,
   },
-  ratio: 30,
+  dayRatio: 30,
+  nightRatio: 30,
 } as const;
 
 const loadConfig = (): TimeConfig => {

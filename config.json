@@ -4,5 +4,6 @@
     "m": 0,
     "s": 0
   },
-  "ratio": 30
+  "dayRatio": 15,
+  "nightRatio": 15
 }

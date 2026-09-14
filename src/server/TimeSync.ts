@@ -1,87 +1,104 @@
 import { Config } from './config';
 import {
   ClientTime,
-  UpdateFreezeParams,
-  getHMSToTime,
-  normalizeTotal
+  SyncPayload,
+  calculateCurrentTime,
+  getHMSToTime
 } from '../shared/utils';
 
 class WorldTime {
-  private baseTimeInSec = 0;
-  private startedAtMs = 0;
-  private ratio = 30;
-  private frozen = false;
-  private frozenTimeInSec = 0;
+  private baseTimeInSec = 0;    // Total seconds passed after midnight;
+  private startedAtStamp = 0;   // Last timestamp when the time was calculated;
+  private dayRatio = 30;        // Day 1 IRL second ratio to 1 in-game second (by default, 1 IRL second = 30 in-game seconds);
+  private nightRatio = 30;      // Night 1 IRL second ratio to 1 in-game second;
+  private frozen = false;       // Whether the time is frozen;
+  private frozenTimeInSec = 0;  // The frozen time value.
 
-  constructor({ h, m, s }: ClientTime, ratio: number) {
+  constructor(
+    { h, m, s }: ClientTime,
+    dayRatio: number,
+    nightRatio: number
+  ) {
+    this.dayRatio = Math.abs(dayRatio) | 0;
+    this.nightRatio = Math.abs(nightRatio) | 0;
     this.setTime({ h, m, s });
-    this.ratio = Math.abs(ratio) | 0;
   }
 
   public setTime({ h, m, s }: ClientTime): void {
     this.baseTimeInSec = getHMSToTime({ h, m, s });
-    this.startedAtMs = GetGameTimer();
+    this.startedAtStamp = Date.now();
     if (this.frozen) this.frozenTimeInSec = this.baseTimeInSec;
   }
 
   public getTime(): number {
     if (this.frozen) return this.frozenTimeInSec;
-
-    const elapsedMs = GetGameTimer() - this.startedAtMs;
-    const elapsedGameSec = (elapsedMs / 1000) * this.ratio;
-    const totalSeconds = this.baseTimeInSec + elapsedGameSec;
-
-    return normalizeTotal(totalSeconds);
+    return calculateCurrentTime(
+      this.baseTimeInSec,
+      this.startedAtStamp,
+      this.dayRatio,
+      this.nightRatio
+    );
   }
 
-  public getRatio(): number {
-    return this.ratio;
-  }
-
-  public toggleFrozen(): UpdateFreezeParams {
-    this.frozen = !this.frozen;
-
-    if (this.frozen) this.frozenTimeInSec = this.getTime();
-    else {
-      this.baseTimeInSec = this.frozenTimeInSec;
-      this.startedAtMs = GetGameTimer();
-    }
-
-    const updateData: UpdateFreezeParams = {
-      timeInSec: this.frozenTimeInSec,
-      status: this.frozen
+  public getSyncPayload(): SyncPayload {
+    return {
+      baseTimeInSec: this.frozen ? this.frozenTimeInSec : this.baseTimeInSec,
+      startedAtStamp: this.startedAtStamp,
+      dayRatio: this.dayRatio,
+      nightRatio: this.nightRatio,
+      frozen: this.frozen,
     };
+  }
 
-    return updateData;
+  public toggleFrozen(): boolean {
+    if (this.frozen) {
+      this.baseTimeInSec = this.frozenTimeInSec;
+      this.startedAtStamp = Date.now();
+      this.frozen = false;
+    } else {
+      this.frozenTimeInSec = this.getTime();
+      this.frozen = true;
+    }
+    return this.frozen;
   }
 }
 
-const Time = new WorldTime(Config.startTime, Config.ratio);
+const Time = new WorldTime(
+  Config.startTime,
+  Config.dayRatio,
+  Config.nightRatio
+);
 
-const UpdateWorldTime = (src: number) => {
-  const timeInSec = Time.getTime();
-  emitNet('TimeSync:update', src, timeInSec);
+const BroadcastSync = (target: number) => {
+  emitNet('TimeSync:clientSync', target, Time.getSyncPayload());
 };
 
-const SetWorldTime = ({ h, m, s }: ClientTime) => {
-  Time.setTime({ h, m, s });
-  UpdateWorldTime(-1);
-};
-
-const GetWorldTime = () => Time.getTime();
-
-const ToggleFrozen = () => {
-  const freezeData = Time.toggleFrozen();
-  emitNet('TimeSync:freeze', -1, freezeData);
-  return freezeData.status;
-};
-
-onNet('TimeSync:init', () => {
-  emitNet('TimeSync:ratio', source, Time.getRatio());
-  UpdateWorldTime(source);
+// Server Events:
+on('onServerResourceStart', (resourceName: string) => {
+  if (GetCurrentResourceName() !== resourceName) return;
+  BroadcastSync(-1);
 });
 
-exports('TimeSync:UpdateWorldTime', UpdateWorldTime);
-exports('TimeSync:SetWorldTime', SetWorldTime);
-exports('TimeSync:GetWorldTime', GetWorldTime);
-exports('TimeSync:ToggleFrozen', ToggleFrozen);
+// Network Events:
+onNet('TimeSync:requestSync', () => {
+  const src = source;
+  BroadcastSync(src);
+});
+
+// Exports:
+globalThis.exports('SetWorldTime', ({ h, m, s }: ClientTime) => {
+  Time.setTime({ h, m, s });
+  BroadcastSync(-1);
+});
+
+globalThis.exports('GetWorldTime', () => Time.getTime());
+
+globalThis.exports('ToggleFrozen', (): boolean => {
+  const state = Time.toggleFrozen();
+  BroadcastSync(-1);
+  return state;
+});
+
+RegisterCommand('freeze', (source: number, args: string[]) => {
+  Time.toggleFrozen();
+}, false);
