@@ -47,8 +47,8 @@ This project ended up being fairly optimized for a "time sync" script. I did my 
 - Completely standalone;
 - Lightweight production script files (in `prod/`);
 - Adjustable in-game timeflow (e.g. 1:1 IRL time);
-- Day and night can have different length (e.g. longer nights);
-- No excessive re-syncs unless needed: time passes natually via the engine logic. It takes around 5 IRL minutes to achieve a 15 in-game seconds offset when the time ratio is set to 30 (1 IRL second = 30 in-game seconds, as it is by default in GTA V);
+- Day and night can have different length (e.g. longer nights or longer days);
+- No excessive re-syncs unless needed: time passes natually via the game engine. It takes around 5 IRL minutes to achieve a 15 in-game seconds offset when the time ratio is set to 30 (1 IRL second = 30 in-game seconds, as it is by default in GTA V);
 - No "sky twitching", as the recommended value for the maximum offset (10 seconds) adjusts time almost seamlessly during a re-sync;
 ###
 

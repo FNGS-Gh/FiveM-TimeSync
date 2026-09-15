@@ -79,6 +79,12 @@ onNet('TimeSync:requestSync', () => {
   BroadcastSync(src);
 });
 
+// Server Events:
+on('onServerResourceStart', (resourceName: string) => {
+  if (GetCurrentResourceName() !== resourceName) return;
+  BroadcastSync(-1);
+});
+
 // Exports:
 globalThis.exports('SetWorldTime', ({ h, m, s }: ClientTime) => {
   Time.setTime({ h, m, s });
@@ -91,10 +97,4 @@ globalThis.exports('ToggleFrozen', (): boolean => {
   const state = Time.toggleFrozen();
   BroadcastSync(-1);
   return state;
-});
-
-// Server Events:
-on('onServerResourceStart', (resourceName: string) => {
-  if (GetCurrentResourceName() !== resourceName) return;
-  BroadcastSync(-1);
 });
