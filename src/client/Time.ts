@@ -1,3 +1,4 @@
+import { Config } from '../shared/config';
 import {
   SyncPayload,
   getTimeToHMS,
@@ -6,8 +7,8 @@ import {
   WHOLE_DAY
 } from '../shared/utils';
 
-const MAX_TIME_OFFSET = 10;   // -> Seconds
-const CHECK_INTERVAL = 5000;  // -> Milliseconds
+const MAX_TIME_OFFSET = Config.maxTimeOffset;
+const CHECK_INTERVAL = Config.syncCheckInterval;
 
 let currentPayload: SyncPayload | null = null;
 let lastRatio = 1;
@@ -36,11 +37,6 @@ const ApplyClockTime = (totalSeconds: number, ratio: number) => {
   NetworkOverrideClockTime(h, m, s);
 };
 
-// Client Events:
-on('onClientMapStart', () => {
-  emitNet('TimeSync:requestSync');
-});
-
 // Network Events:
 onNet('TimeSync:clientSync', (payload: SyncPayload) => {
   currentPayload = payload;
@@ -66,14 +62,25 @@ onNet('TimeSync:clientSync', (payload: SyncPayload) => {
   ApplyClockTime(expectedSec, activeRatio);
 });
 
+
 // Game Threads:
-setTick(() => {
-  if (currentPayload?.frozen) NetworkOverrideClockTime(
-    frozenTime.h,
-    frozenTime.m,
-    frozenTime.s
-  );
-});
+if (Config.perfectFreeze) {
+  setTick(() => {
+    if (currentPayload?.frozen) NetworkOverrideClockTime(
+      frozenTime.h,
+      frozenTime.m,
+      frozenTime.s
+    );
+  });
+} else {
+  setInterval(() => {
+    if (currentPayload?.frozen) NetworkOverrideClockTime(
+      frozenTime.h,
+      frozenTime.m,
+      frozenTime.s
+    );
+  }, 250);
+}
 
 setInterval(() => {
   if (!currentPayload || currentPayload.frozen) return;
@@ -103,3 +110,8 @@ setInterval(() => {
       emitNet('TimeSync:requestSync');
   }
 }, CHECK_INTERVAL);
+
+// Client Events:
+on('onClientMapStart', () => {
+  emitNet('TimeSync:requestSync');
+});

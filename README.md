@@ -38,7 +38,7 @@ npm install -D typescript @citizenfx/client @citizenfx/server
 
 ## 2. Description
 
-This project ended up being fairly optimized for a "time sync" script. I did my best to avoid unnecessary server load due to constant re-sync requests. The time calculation is done "on demand", using universal timestamps instead of periodic incremental tasks. The client processor load is partially defined by the V8 JavaScript runtime, and there is nothing one can do about it.
+This project ended up being fairly optimized for a "time sync" script. I did my best to avoid unnecessary server load due to constant re-sync requests. The time calculation is done "on demand", using universal timestamps instead of periodic incremental tasks.
 
 ### Features:
 
@@ -52,4 +52,6 @@ This project ended up being fairly optimized for a "time sync" script. I did my 
 - No "sky twitching", as the recommended value for the maximum offset (10 seconds) adjusts time almost seamlessly during a re-sync;
 ###
 
-I got a stable result of `0.04-0.05 ms` processor time, and I don't see how it can be optimized any further with the current state of things (without switching to Lua). In my opinion, it is a good result for the amount of features and the overall smoothness the script implements.
+I got a stable result of `0.01ms` processor time, and I don't see how it can be optimized any further. I believe it's a good result for the amount of features and the overall smoothness the script implements.
+
+## 3. Known Issues
