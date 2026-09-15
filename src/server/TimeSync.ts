@@ -1,4 +1,4 @@
-import { Config } from './config';
+import { Config } from '../shared/config';
 import {
   ClientTime,
   SyncPayload,
@@ -7,12 +7,12 @@ import {
 } from '../shared/utils';
 
 class WorldTime {
-  private baseTimeInSec = 0;    // Time value in seconds;
-  private startedAtStamp = 0;   // Last timestamp when the time was calculated;
-  private dayRatio = 30;        // Day: 1 IRL second ratio to 1 in-game second (by default, 1 IRL second = 30 in-game seconds);
-  private nightRatio = 30;      // Night: 1 IRL second ratio to 1 in-game second;
-  private frozen = false;       // Whether the time is frozen;
-  private frozenTimeInSec = 0;  // The frozen time value in seconds.
+  private baseTimeInSec = 0;
+  private startedAtStamp = 0;
+  private dayRatio = 30;
+  private nightRatio = 30;
+  private frozen = false;
+  private frozenTimeInSec = 0;
 
   constructor(
     { h, m, s }: ClientTime,
@@ -73,16 +73,16 @@ const BroadcastSync = (target: number) => {
   emitNet('TimeSync:clientSync', target, Time.getSyncPayload());
 };
 
-// Server Events:
-on('onServerResourceStart', (resourceName: string) => {
-  if (GetCurrentResourceName() !== resourceName) return;
-  BroadcastSync(-1);
-});
-
 // Network Events:
 onNet('TimeSync:requestSync', () => {
   const src = source;
   BroadcastSync(src);
+});
+
+// Server Events:
+on('onServerResourceStart', (resourceName: string) => {
+  if (GetCurrentResourceName() !== resourceName) return;
+  BroadcastSync(-1);
 });
 
 // Exports:
