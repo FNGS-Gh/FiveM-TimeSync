@@ -7,3 +7,7 @@ version '1.0.2'
 
 client_script 'dist/client.js'
 server_script 'dist/server.js'
+
+files {
+  'config.json'
+}
