@@ -73,7 +73,6 @@ const loadConfig = (): TimeConfig => {
   const configFile = LoadResourceFile(resourceName, 'config.json');
 
   const configError = () => {
-    console.log('error');
     console.error('Failed to load config.json');
     return DEFAULT_CONFIG;
   };
