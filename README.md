@@ -1,9 +1,7 @@
 # FiveM-TimeSync
 `by Ghost @ FNGS / 2026` → [Author's GitHub](https://github.com/FNGS-Gh)
 
-This standalone script provides general time control features as a workaround for the FiveM asynchronous time behavior among players. 
-It focuses on a highly customizable and optimized system to satisfy almost any possible needs a FiveM developer might face along the way, featuring different scenarios, usage variety and so on.
-For example, the variable time cycle allows you to have longer nights or days, while preserving the general client-side sync.
+This standalone script provides general time control features. It focuses on a highly customizable and optimized system to satisfy almost any possible needs a FiveM developer might face along the way, featuring different scenarios, usage variety and so on. For example, the variable time cycle allows you to have longer nights or days, while preserving the general client-side sync.
 
 The script also implements a fairly optimized solution to the in-game sky map "twitching" issue, which is caused by the constant local time updates, moving the light source position (the Sun or the Moon) backwards on each iteration before the local script receives an updated time value.
 
@@ -55,3 +53,5 @@ This project ended up being fairly optimized for a "time sync" script. I did my 
 I got a stable result of `0.01ms` processor time, and I don't see how it can be optimized any further. I believe it's a good result for the amount of features and the overall smoothness the script implements.
 
 ## 3. Known Issues
+
+- Depending on the local game loading state, the in-game time offset might be around 60-120 seconds before the local interval check notices it. The issue occurs only once upon the initial time sync, which happens when a player loads into the map. Not sure whether there is any need to fix it;
