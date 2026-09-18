@@ -3,12 +3,12 @@
 
 This standalone script provides general time control features. It focuses on a highly customizable and optimized system to satisfy almost any possible needs a FiveM developer might face along the way, featuring different scenarios, usage variety and so on. For example, the variable time cycle allows you to have longer nights or days, while preserving the general client-side sync.
 
-The script also implements a fairly optimized solution to the in-game sky map "twitching" issue, which is caused by the constant local time updates, moving the light source position (the Sun or the Moon) backwards on each iteration before the local script receives an updated time value.
+The script also implements a fairly optimized solution to the common "sky flickering" issue, which is usually caused by the constant local time updates, moving the light source position (the Sun or the Moon) backwards on each iteration before the local script receives an updated time value.
 
 *More details can be found below under the* **"2. Description"** *section ▼*
 
 ## 1. Installation
-❗️ *This project is published under the MIT License. Upon using it, please make sure to keep the credits and apply the same type of license.*
+❗️ *This project is published under the MIT License. Upon using it, please make sure to keep the credits and apply the same type of licensing.*
 
 ---
 
@@ -36,7 +36,7 @@ npm install -D typescript @citizenfx/client @citizenfx/server
 
 ## 2. Description
 
-This project ended up being fairly optimized for a "time sync" script. I did my best to avoid unnecessary server load due to constant re-sync requests. The time calculation is done "on demand", using universal timestamps instead of periodic incremental tasks.
+This project ended up being fairly optimized for a "time sync" script. I did my best to avoid unnecessary server load due to constant re-sync requests. The time calculation is done "on demand", using universal server uptime values (`GetNetworkTimeAccurate()` for client and `GetGameTimer()` for server) instead of periodic incremental tasks.
 
 ### Features:
 
@@ -46,7 +46,7 @@ This project ended up being fairly optimized for a "time sync" script. I did my 
 - Lightweight production script files (in `prod/`);
 - Adjustable in-game timeflow (e.g. 1:1 IRL time);
 - Day and night can have different length (e.g. longer nights or longer days);
-- No excessive re-syncs unless needed: time passes natually via the game engine. It takes around 5 IRL minutes to achieve a 15 in-game seconds offset when the time ratio is set to 30 (1 IRL second = 30 in-game seconds, as it is by default in GTA V);
+- No excessive re-syncs unless needed: time passes natually via the game engine. Throughout the whole testing, I've never witnessed a time offset of more than 10 in-game seconds, which would call a re-sync client-to-server request;
 - No "sky twitching", as the recommended value for the maximum offset (10 seconds) adjusts time almost seamlessly during a re-sync;
 ###
 
@@ -55,3 +55,5 @@ I got a stable result of `0.01ms` processor time, and I don't see how it can be 
 ## 3. Known Issues
 
 - Depending on the local game loading state, the in-game time offset might be around 20-30s before the local interval check notices it. The issue occurs only once upon the initial time sync, which happens when a player loads into the map. Not sure whether there is any need to fix it;
+
+- I'm not sure how persistent and accurate the client's `GetNetworkTimeAccurate()` native is in relation to the server's `GetGameTimer()` one throughout a long server uptime. So far, I've done a single test by joining the server that has been running for ~4 hours, and not a single offset of more than 10 seconds has occurred even once. But the issue might unveil itself during a longer uptime. I'll keep testing those natives' co-accurracy;
