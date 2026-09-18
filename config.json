@@ -4,8 +4,8 @@
     "m": 0,
     "s": 0
   },
-  "dayRatio": 15,
-  "nightRatio": 15,
+  "dayRatio": 40,
+  "nightRatio": 40,
   "maxTimeOffset": 10,
   "syncCheckInterval": 5000,
   "perfectFreeze": false

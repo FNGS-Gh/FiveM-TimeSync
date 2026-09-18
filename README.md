@@ -54,4 +54,4 @@ I got a stable result of `0.01ms` processor time, and I don't see how it can be 
 
 ## 3. Known Issues
 
-- Depending on the local game loading state, the in-game time offset might be around 60-120 seconds before the local interval check notices it. The issue occurs only once upon the initial time sync, which happens when a player loads into the map. Not sure whether there is any need to fix it;
+- Depending on the local game loading state, the in-game time offset might be around 20-30s before the local interval check notices it. The issue occurs only once upon the initial time sync, which happens when a player loads into the map. Not sure whether there is any need to fix it;
