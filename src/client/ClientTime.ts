@@ -3,6 +3,7 @@ import {
   TimeHMS,
   SyncPayload,
   AllPayload,
+  normHMS,
   getTimeToHMS,
   calcTime
 } from '../shared/utils';
@@ -22,8 +23,10 @@ class ClientTime {
     if (ratio !== this.currRatio) {
       this.currRatio = ratio;
 
-      const ms = Math.floor((60 / this.currRatio) * 1000);
+      const ms = Math.floor((60 / ratio) * 1000);
       NetworkOverrideClockMillisecondsPerGameMinute(ms);
+
+      console.log(`New Ratio: ${ratio} (${ms}ms)`);
     }
   }
 
@@ -32,7 +35,7 @@ class ClientTime {
     lastTime: number,
     lastTimer: number
   ) {
-    const newHMS = getTimeToHMS(lastTime);
+    const newHMS = normHMS(getTimeToHMS(lastTime));
     NetworkOverrideClockTime(newHMS.h, newHMS.m, newHMS.s);
 
     this.lastTimer = lastTimer;
@@ -112,16 +115,20 @@ setInterval(() => {
     Time.currRatio
   );
 
+  const tmpExp = normHMS(getTimeToHMS(expectTime));
+
+  console.log(`Ratio: ${Time.currRatio} | Actual Time: ${actualTime} (${GetClockHours()}:${GetClockMinutes()}:${GetClockSeconds()}) | Expected Time: ${expectTime} (${tmpExp.h}:${tmpExp.m}:${tmpExp.s})`);
+
   const offset = Math.abs(expectTime - actualTime);
   if (offset > Config.maxTimeOffset) {
     console.log(`Big Offset: ${offset}`);
 
-    const { h, m, s } = getTimeToHMS(expectTime);
+    const { h, m, s } = normHMS(getTimeToHMS(expectTime));
     NetworkOverrideClockTime(h, m, s);
 
     if (offset >= Config.maxTimeOffset * 1.5)
       emitNet('Time:RequestSync');
   }
-}, 1000);
+}, 3000);
 
 on('onClientMapStart', () => emitNet('Time:RequestInit'));

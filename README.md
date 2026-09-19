@@ -56,4 +56,6 @@ I got a stable result of `0.01ms` processor time, and I don't see how it can be 
 
 - Depending on the local game loading state, the in-game time offset might be around 20-30s before the local interval check notices it. The issue occurs only once upon the initial time sync, which happens when a player loads into the map. Not sure whether there is any need to fix it;
 
+- When using the `setTime()` server method manually with unequal day/night length, a brief time de-sync might occur on the client-side;
+
 - I'm not sure how persistent and accurate the client's `GetNetworkTimeAccurate()` native is in relation to the server's `GetGameTimer()` one throughout a long server uptime. So far, I've done a single test by joining the server that has been running for ~4 hours, and not a single offset of more than 10 seconds has occurred even once. But the issue might unveil itself during a longer uptime. I'll keep testing those natives' co-accurracy;

@@ -8,8 +8,6 @@
  * dayRatio: number           <- In-game seconds ratio to IRL seconds (e.g. 30:1);
  * nightRatio: number         <- Same as above but for the night cycle only;
  * maxTimeOffset: number      <- (seconds) Max allowed client time offset before a re-sync happens;
- * syncCheckInterval: number  <- (milliseconds) Interval to check the client time offset.
- *                             \_ The bigger the ratio, the bigger the value here;
  * 
  * perfectFreeze: boolean     <- Description below:
  * Whether the time freezes completely.
@@ -26,7 +24,6 @@ interface TimeConfig {
   dayRatio: number;
   nightRatio: number;
   maxTimeOffset: number;
-  syncCheckInterval: number;
   perfectFreeze: boolean;
 }
 
@@ -41,7 +38,6 @@ const DEFAULT_CONFIG: TimeConfig = {
   dayRatio: 30,
   nightRatio: 30,
   maxTimeOffset: 10,
-  syncCheckInterval: 5000,
   perfectFreeze: false
 } as const;
 
@@ -54,7 +50,6 @@ const isTimeConfig = (data: unknown): data is TimeConfig => {
   if (typeof obj.nightRatio !== 'number' || isNaN(obj.nightRatio) || obj.nightRatio <= 0) return false; 
 
   if (typeof obj.maxTimeOffset !== 'number' || isNaN(obj.maxTimeOffset) || obj.maxTimeOffset <= 0) return false;
-  if (typeof obj.syncCheckInterval !== 'number' || isNaN(obj.syncCheckInterval) || obj.syncCheckInterval < 500) return false;
   if (typeof obj.perfectFreeze !== 'boolean') return false;
 
   if (typeof obj.startTime !== 'object' || obj.startTime === null) return false; 

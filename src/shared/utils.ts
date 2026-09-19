@@ -27,7 +27,7 @@ export const normHMS = ({ h, m, s }: TimeHMS): TimeHMS => ({
   s: Math.min(59, Math.max(0, s))
 });
 
-export const getTimeToHMS = (timeInSec: number): TimeHMS => normHMS({
+export const getTimeToHMS = (timeInSec: number): TimeHMS => ({
   h: Math.floor(timeInSec / 3600),
   m: Math.floor((timeInSec % 3600) / 60),
   s: Math.floor(timeInSec % 60),

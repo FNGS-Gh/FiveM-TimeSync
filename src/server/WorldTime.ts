@@ -9,7 +9,8 @@ import {
   SUNSET_SECONDS,
   getHMSToTime,
   isDaytime,
-  calcTime
+  calcTime,
+  getTimeToHMS
 } from '../shared/utils';
 
 class WorldTime {
@@ -20,7 +21,6 @@ class WorldTime {
   private lastTimeS = 0;
   private lastTimer = 0;
   private currPhase = TimePhase.DAY;
-
   private phaseTimeout: NodeJS.Timeout | null = null;
 
   public isFrozen = false;
@@ -46,11 +46,13 @@ class WorldTime {
       this.phaseTimeout = null;
     }
 
+    this.getTime();
+
     if (swapPhases)
       this.currPhase = PHASE_SWAP[this.currPhase];
 
     if (updTime)
-      emitNet('Time:Sync', -1, this.getSyncPayload());
+      emitNet('Time:Sync', -1, this.getSyncPayload(false));
 
     if (this.dayRatio === this.nightRatio) return;
 
@@ -84,12 +86,12 @@ class WorldTime {
     const timerNow = GetGameTimer();
 
     this.lastTimeS = calcTime(
-      this.lastTimeS,
+      this.lastTimer,
       timerNow,
       this.lastTimeS,
       this.ratioMap[this.currPhase]
     );
-    this.lastTimeS = timerNow;
+    this.lastTimer = timerNow;
 
     return this.lastTimeS;
   }
@@ -157,7 +159,7 @@ globalThis.exports('TimeFreeze', () => TimeSync.toggleFrozen());
 
 // tmp
 // setInterval(() => {
-//   const time = calcTime(TimeSync.fromTimer, GetGameTimer(), TimeSync.timeInSec, TimeSync.ratioMap[TimeSync.currPhase]);
+//   const time = calcTime(TimeSync.lastTimer, GetGameTimer(), TimeSync.lastTimeS, TimeSync.ratioMap[TimeSync.currPhase]);
 //   const { h, m, s } = getTimeToHMS(time);
 //   console.log(`Time: ${h}:${m}:${s}`);
 // }, 2000);
