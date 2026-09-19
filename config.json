@@ -1,12 +1,11 @@
 {
   "startTime": {
-    "h": 6,
-    "m": 0,
+    "h": 5,
+    "m": 25,
     "s": 0
   },
   "dayRatio": 15,
-  "nightRatio": 15,
+  "nightRatio": 5,
   "maxTimeOffset": 10,
-  "syncCheckInterval": 5000,
   "perfectFreeze": false
 }
