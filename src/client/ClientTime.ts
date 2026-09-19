@@ -1,144 +1,112 @@
-import { Hmac } from 'node:crypto';
 import { Config } from '../shared/config';
 import {
-  calcTime,
-  getTimeToHMS,
-  InitPayload,
-  normHMS,
+  TimeHMS,
   SyncPayload,
-  TimeHMS
+  AllPayload,
+  getTimeToHMS,
+  calcTime
 } from '../shared/utils';
 
-const freezeOverride = ({ h, m, s }: TimeHMS) => {
-  NetworkOverrideClockTime(h, m, s);
-};
-
-const getTotalGameTime = (): number => {
-  const h = GetClockHours();
-  const m = GetClockMinutes();
-  const s = GetClockSeconds();
-  return h * 3600 + m * 60 + s;
-};
+const getTotalGameTime = (): number => 
+  GetClockHours() * 3600 + GetClockMinutes() * 60 + GetClockSeconds();
 
 class ClientTime {
-  public currRatio = 4;
-  public startTimer = 0;
+  public currRatio = 0;
+  public lastTimer = 0;
   public lastTimeS = 0;
+  public lastTimeHMS: TimeHMS = { h: 0, m: 0, s: 0 };
   public isActive = false;
-  public frozenTime: TimeHMS | null = null;
+  public isFrozen = false;
 
-  public applyRatio(
-    ratio: number,
-    gameTime?: number,
-    timer?: number
-  ) {
-    this.currRatio = ratio;
+  public applyRatio(ratio: number) {
+    if (ratio !== this.currRatio) {
+      this.currRatio = ratio;
 
-    if (gameTime !== undefined && timer !== undefined) {
-      this.lastTimeS = gameTime;
-      this.startTimer = timer;
-
-      const { h, m, s } = normHMS(getTimeToHMS(gameTime));
-      NetworkOverrideClockTime(h, m, s);
+      const ms = Math.floor((60 / this.currRatio) * 1000);
+      NetworkOverrideClockMillisecondsPerGameMinute(ms);
     }
-
-    const ms = Math.round((60 / this.currRatio) * 1000);
-    NetworkOverrideClockMillisecondsPerGameMinute(ms);
   }
 
-  public applyFreeze(
-    state: boolean,
-    frozenTime: number,
-    timer = this.startTimer
+  public applyTime(
+    ratio: number,
+    lastTime: number,
+    lastTimer: number
   ) {
-    this.startTimer = timer;
-    this.lastTimeS = frozenTime;
+    const newHMS = getTimeToHMS(lastTime);
+    NetworkOverrideClockTime(newHMS.h, newHMS.m, newHMS.s);
 
-    if (state) {
-      const { h, m, s } = normHMS(getTimeToHMS(frozenTime));
-      NetworkOverrideClockTime(h, m, s);
-      NetworkOverrideClockMillisecondsPerGameMinute(15000);
-      this.frozenTime = { h, m, s };
-    } else {
-      this.frozenTime = null;
-      this.applyRatio(this.currRatio, frozenTime, timer);
-    }
+    this.lastTimer = lastTimer;
+    this.lastTimeS = lastTime;
+    this.lastTimeHMS = newHMS;
+
+    this.applyRatio(ratio);
   }
 }
 
 const Time = new ClientTime();
 
-onNet('Time:InitSync', (payload: InitPayload) => {
-  Time.applyFreeze(
-    payload.isFrozen,
-    payload.gameTime,
-    payload.lastTimer
-  );
-
-  if (!payload.isFrozen) Time.applyRatio(
+onNet('Time:InitSync', (payload: AllPayload) => {
+  Time.applyTime(
     payload.ratio,
     payload.gameTime,
     payload.lastTimer
   );
 
-  // if (!payload.isFrozen) Time.applyRatio(
-  //   payload.ratio,
-  //   payload.gameTime,
-  //   GetNetworkTimeAccurate()
-  // );
+  if (payload.isFrozen !== Time.isFrozen) {
+    if (payload.isFrozen) Time.applyRatio(4);
+    Time.isFrozen = payload.isFrozen;
+  }
 
   Time.isActive = true;
 });
 
 onNet('Time:Sync', (payload: SyncPayload) => {
   if (!Time.isActive) return;
-  Time.applyRatio(
+  Time.applyTime(
     payload.ratio,
     payload.gameTime,
     payload.lastTimer
   );
-  // Time.applyRatio(
-  //   payload.ratio,
-  //   payload.gameTime,
-  //   GetNetworkTimeAccurate()
-  // );
 });
 
-onNet(
-  'Time:UpdRatio',
-  (ratio: number, gameTime: number, timer: number) => {
-    if (!Time.isActive) return;
-    Time.applyRatio(ratio, gameTime, timer);
-    //Time.applyRatio(ratio, gameTime, GetNetworkTimeAccurate());
-  }
-);
+onNet('Time:SetFrozen', (payload: AllPayload) => {
+  if (!Time.isActive) return;
 
-onNet(
-  'Time:SetFrozen',
-  (state: boolean, frozenTime: number, timer: number) => {
-    if (!Time.isActive) return;
-    Time.applyFreeze(state, frozenTime, timer);
+  if (payload.isFrozen !== Time.isFrozen) {
+    Time.applyTime(
+      payload.ratio,
+      payload.gameTime,
+      payload.lastTimer
+    );
+
+    Time.isFrozen = payload.isFrozen;
   }
-);
+});
 
 if (Config.perfectFreeze) {
   setTick(() => {
-    if (Time.frozenTime)
-      freezeOverride(Time.frozenTime);
+    if (Time.isFrozen) NetworkOverrideClockTime(
+      Time.lastTimeHMS.h,
+      Time.lastTimeHMS.m,
+      Time.lastTimeHMS.s
+    );
   });
 } else {
   setInterval(() => {
-    if (Time.frozenTime)
-      freezeOverride(Time.frozenTime);
+    if (Time.isFrozen) NetworkOverrideClockTime(
+      Time.lastTimeHMS.h,
+      Time.lastTimeHMS.m,
+      30
+    );
   }, 250);
 }
 
 setInterval(() => {
-  if (!Time.isActive || Time.frozenTime) return;
+  if (!Time.isActive || Time.isFrozen) return;
 
   const actualTime = getTotalGameTime();
   const expectTime = calcTime(
-    Time.startTimer,
+    Time.lastTimer,
     GetNetworkTimeAccurate(),
     Time.lastTimeS,
     Time.currRatio
@@ -147,13 +115,13 @@ setInterval(() => {
   const offset = Math.abs(expectTime - actualTime);
   if (offset > Config.maxTimeOffset) {
     console.log(`Big Offset: ${offset}`);
-    if (offset < Config.maxTimeOffset * 1.5) {
-      const { h, m, s } = normHMS(getTimeToHMS(expectTime));
-      NetworkOverrideClockTime(h, m, s);
-    } else emitNet('Time:RequestSync');
+
+    const { h, m, s } = getTimeToHMS(expectTime);
+    NetworkOverrideClockTime(h, m, s);
+
+    if (offset >= Config.maxTimeOffset * 1.5)
+      emitNet('Time:RequestSync');
   }
 }, 1000);
 
-on('onClientMapStart', () => {
-  emitNet('Time:RequestInit');
-});
+on('onClientMapStart', () => emitNet('Time:RequestInit'));

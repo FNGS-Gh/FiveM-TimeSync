@@ -1,33 +1,25 @@
 import { Config } from '../shared/config';
-import { PhaseSwap, TimePhase } from './utils';
+import { TimePhase, PHASE_SWAP } from './utils';
 import {
-  calcTime,
+  TimeHMS,
+  SyncPayload,
+  AllPayload,
   DAY_SECONDS,
-  getHMSToTime,
-  getTimeToHMS,
-  InitPayload,
-  isDaytime,
-  normHMS,
   SUNRISE_SECONDS,
   SUNSET_SECONDS,
-  SyncPayload,
-  TimeHMS,
-
+  getHMSToTime,
+  isDaytime,
+  calcTime
 } from '../shared/utils';
 
 class WorldTime {
   private readonly dayRatio: number;
   private readonly nightRatio: number;
-  //private readonly ratioMap: Record<TimePhase, number>;
-  public readonly ratioMap: Record<TimePhase, number>;
+  private readonly ratioMap: Record<TimePhase, number>;
 
-  public timeInSec: number;
-  public fromTimer: number;
-  public currPhase: TimePhase;
-
-  //private timeInSec: number;
-  //private fromTimer: number;
-  //private currPhase: TimePhase;
+  private lastTimeS = 0;
+  private lastTimer = 0;
+  private currPhase = TimePhase.DAY;
 
   private phaseTimeout: NodeJS.Timeout | null = null;
 
@@ -41,18 +33,11 @@ class WorldTime {
     this.dayRatio = dayRatio;
     this.nightRatio = nightRatio;
     this.ratioMap = {
-      [TimePhase.Day]: dayRatio,
-      [TimePhase.Night]: nightRatio
+      [TimePhase.DAY]: dayRatio,
+      [TimePhase.NIGHT]: nightRatio
     };
 
-    const timeSeconds = getHMSToTime(normHMS(startTime));
-    this.timeInSec = timeSeconds;
-    this.fromTimer = GetGameTimer();
-
-    const isDay = isDaytime(this.timeInSec);
-    this.currPhase = isDay ? TimePhase.Day : TimePhase.Night;
-
-    this.shiftPhase(false, false);
+    this.setTime(startTime, false);
   }
 
   private shiftPhase(swapPhases = true, updTime = true) {
@@ -61,27 +46,19 @@ class WorldTime {
       this.phaseTimeout = null;
     }
 
+    if (swapPhases)
+      this.currPhase = PHASE_SWAP[this.currPhase];
+
+    if (updTime)
+      emitNet('Time:Sync', -1, this.getSyncPayload());
+
     if (this.dayRatio === this.nightRatio) return;
 
-    if (swapPhases)
-      this.currPhase = PhaseSwap[this.currPhase];
-
-    if (updTime) {
-      this.getTime();
-      emitNet(
-        'Time:UpdRatio',
-        -1,
-        this.ratioMap[this.currPhase],
-        this.timeInSec,
-        this.fromTimer
-      );
-    }
-
-    const toNextPhaseGameS = this.currPhase === TimePhase.Day
-      ? SUNSET_SECONDS - this.timeInSec
-      : this.timeInSec < SUNRISE_SECONDS
-      ? SUNRISE_SECONDS - this.timeInSec
-      : (DAY_SECONDS - this.timeInSec) + SUNRISE_SECONDS;
+    const toNextPhaseGameS = this.currPhase === TimePhase.DAY
+      ? SUNSET_SECONDS - this.lastTimeS
+      : this.lastTimeS < SUNRISE_SECONDS
+      ? SUNRISE_SECONDS - this.lastTimeS
+      : (DAY_SECONDS - this.lastTimeS) + SUNRISE_SECONDS;
     const toNextPhaseRealS = toNextPhaseGameS / this.ratioMap[this.currPhase];
     
     this.phaseTimeout = setTimeout(
@@ -90,20 +67,31 @@ class WorldTime {
     );
   }
 
+  public setTime(timeHMS: TimeHMS, toSync = true) {
+    const timeSeconds = getHMSToTime(timeHMS);
+    this.lastTimeS = timeSeconds;
+    this.lastTimer = GetGameTimer();
+
+    const isDay = isDaytime(this.lastTimeS);
+    this.currPhase = isDay ? TimePhase.DAY : TimePhase.NIGHT;
+
+    this.shiftPhase(false, toSync);
+  }
+
   public getTime(): number {
-    if (this.isFrozen) return this.timeInSec;
+    if (this.isFrozen) return this.lastTimeS;
 
     const timerNow = GetGameTimer();
 
-    this.timeInSec = calcTime(
-      this.fromTimer,
+    this.lastTimeS = calcTime(
+      this.lastTimeS,
       timerNow,
-      this.timeInSec,
+      this.lastTimeS,
       this.ratioMap[this.currPhase]
     );
-    this.fromTimer = timerNow;
+    this.lastTimeS = timerNow;
 
-    return this.timeInSec;
+    return this.lastTimeS;
   }
 
   public setFrozen(state: boolean) {
@@ -114,20 +102,16 @@ class WorldTime {
       this.phaseTimeout = null;
     }
 
-    if (state) this.getTime();
-    else {
-      this.fromTimer = GetGameTimer();
+    if (state) {
+      this.getTime();
+      this.isFrozen = true;
+    } else {
+      this.isFrozen = false;
+      this.lastTimer = GetGameTimer();
       this.shiftPhase(false, false);
     }
 
-    this.isFrozen = state;
-    emitNet(
-      'Time:SetFrozen',
-      -1,
-      this.isFrozen,
-      this.timeInSec,
-      this.fromTimer
-    );
+    emitNet('Time:SetFrozen', -1, this.getAllPayload(false));
   }
 
   public toggleFrozen(): boolean {
@@ -135,19 +119,19 @@ class WorldTime {
     return this.isFrozen;
   }
 
-  public getSyncPayload(): SyncPayload {
-    this.getTime();
+  public getSyncPayload(update = true): SyncPayload {
+    if (update) this.getTime();
     return {
-      lastTimer: this.fromTimer,
-      gameTime: this.timeInSec,
+      lastTimer: this.lastTimer,
+      gameTime: this.lastTimeS,
       ratio: this.ratioMap[this.currPhase]
     };
   }
 
-  public getInitPayload(): InitPayload {
+  public getAllPayload(update = true): AllPayload {
     return {
       isFrozen: this.isFrozen,
-      ...this.getSyncPayload()
+      ...this.getSyncPayload(update)
     };
   }
 }
@@ -160,7 +144,7 @@ const TimeSync = new WorldTime(
 
 onNet('Time:RequestInit', () => {
   const src = source;
-  emitNet('Time:InitSync', src, TimeSync.getInitPayload());
+  emitNet('Time:InitSync', src, TimeSync.getAllPayload());
 });
 
 onNet('Time:RequestSync', () => {
@@ -168,6 +152,7 @@ onNet('Time:RequestSync', () => {
   emitNet('Time:Sync', src, TimeSync.getSyncPayload());
 });
 
+globalThis.exports('SetTime', (timeHMS: TimeHMS) => TimeSync.setTime(timeHMS));
 globalThis.exports('TimeFreeze', () => TimeSync.toggleFrozen());
 
 // tmp

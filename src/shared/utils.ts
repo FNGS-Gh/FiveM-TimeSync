@@ -10,7 +10,7 @@ export interface SyncPayload {
   ratio: number;
 }
 
-export interface InitPayload extends SyncPayload {
+export interface AllPayload extends SyncPayload {
   isFrozen: boolean;
 }
 
@@ -27,14 +27,14 @@ export const normHMS = ({ h, m, s }: TimeHMS): TimeHMS => ({
   s: Math.min(59, Math.max(0, s))
 });
 
-export const getTimeToHMS = (timeInSec: number): TimeHMS => ({
+export const getTimeToHMS = (timeInSec: number): TimeHMS => normHMS({
   h: Math.floor(timeInSec / 3600),
   m: Math.floor((timeInSec % 3600) / 60),
   s: Math.floor(timeInSec % 60),
 });
 
 export const getHMSToTime = ({ h, m, s }: TimeHMS): number => 
-  (Math.floor(h) * 3600 + Math.floor(m) * 60 + Math.floor(s));
+  Math.floor(h) * 3600 + Math.floor(m) * 60 + Math.floor(s);
 
 export const isDaytime = (timeInSec: number) =>
   timeInSec >= SUNRISE_SECONDS && timeInSec < SUNSET_SECONDS;
