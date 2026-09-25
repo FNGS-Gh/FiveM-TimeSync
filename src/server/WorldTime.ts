@@ -154,6 +154,7 @@ onNet('Time:RequestSync', () => {
   emitNet('Time:Sync', src, TimeSync.getSyncPayload());
 });
 
+globalThis.exports('GetTime', () => TimeSync.getTime());
 globalThis.exports('SetTime', (timeHMS: TimeHMS) => TimeSync.setTime(timeHMS));
 globalThis.exports('TimeFreeze', () => TimeSync.toggleFrozen());
 
