@@ -154,12 +154,6 @@ onNet('Time:RequestSync', () => {
   emitNet('Time:Sync', src, TimeSync.getSyncPayload());
 });
 
+globalThis.exports('GetTime', () => TimeSync.getTime());
 globalThis.exports('SetTime', (timeHMS: TimeHMS) => TimeSync.setTime(timeHMS));
 globalThis.exports('TimeFreeze', () => TimeSync.toggleFrozen());
-
-// tmp
-// setInterval(() => {
-//   const time = calcTime(TimeSync.lastTimer, GetGameTimer(), TimeSync.lastTimeS, TimeSync.ratioMap[TimeSync.currPhase]);
-//   const { h, m, s } = getTimeToHMS(time);
-//   console.log(`Time: ${h}:${m}:${s}`);
-// }, 2000);
