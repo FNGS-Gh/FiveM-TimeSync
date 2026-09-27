@@ -113,6 +113,7 @@ class WorldTime {
       this.shiftPhase(false, false);
     }
 
+    emit('Time:Freeze', state);
     emitNet('Time:SetFrozen', -1, this.getAllPayload(false));
   }
 
