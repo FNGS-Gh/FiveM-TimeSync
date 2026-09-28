@@ -9,8 +9,7 @@ import {
   SUNSET_SECONDS,
   getHMSToTime,
   isDaytime,
-  calcTime,
-  getTimeToHMS
+  calcTime
 } from '../shared/utils';
 
 class WorldTime {
