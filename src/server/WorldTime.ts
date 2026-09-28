@@ -9,8 +9,7 @@ import {
   SUNSET_SECONDS,
   getHMSToTime,
   isDaytime,
-  calcTime,
-  getTimeToHMS
+  calcTime
 } from '../shared/utils';
 
 class WorldTime {
@@ -113,6 +112,7 @@ class WorldTime {
       this.shiftPhase(false, false);
     }
 
+    emit('Time:Freeze', state);
     emitNet('Time:SetFrozen', -1, this.getAllPayload(false));
   }
 
