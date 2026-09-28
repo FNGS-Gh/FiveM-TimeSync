@@ -1,5 +1,5 @@
 # FiveM-TimeSync
-`by Ghost @ FNGS / 2026` → [Author's GitHub](https://github.com/FNGS-Gh)
+`by Ghost @ FNGS / 2026` → [Author's GitHub](https://github.com/GhostQck) / [Publish Github](https://github.com/FNGS-Gh)
 
 This standalone script provides general time control features. It focuses on a highly customizable and optimized system to satisfy almost any possible needs a FiveM developer might face along the way, featuring different scenarios, usage variety and so on. For example, the variable time cycle allows you to have longer nights or days, while preserving the general client-side sync.
 
