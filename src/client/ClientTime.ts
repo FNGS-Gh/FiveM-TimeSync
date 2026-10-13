@@ -12,12 +12,13 @@ const getTotalGameTime = (): number =>
   GetClockHours() * 3600 + GetClockMinutes() * 60 + GetClockSeconds();
 
 class ClientTime {
-  public currRatio = 0;
-  public lastTimer = 0;
-  public lastTimeS = 0;
+  public currRatio  = 0;
+  public lastTimer  = 0;
+  public lastTimeS  = 0;
+  public isActive   = false;
+  public isFrozen   = false;
+
   public lastTimeHMS: TimeHMS = { h: 0, m: 0, s: 0 };
-  public isActive = false;
-  public isFrozen = false;
 
   public applyRatio(ratio: number) {
     if (ratio !== this.currRatio) {

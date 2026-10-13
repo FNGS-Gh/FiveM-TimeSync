@@ -20,6 +20,7 @@ class WorldTime {
   private lastTimeS = 0;
   private lastTimer = 0;
   private currPhase = TimePhase.DAY;
+  
   private phaseTimeout: NodeJS.Timeout | null = null;
 
   public isFrozen = false;
