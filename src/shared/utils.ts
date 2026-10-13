@@ -14,9 +14,9 @@ export interface AllPayload extends SyncPayload {
   isFrozen: boolean;
 }
 
-export const DAY_SECONDS = 86400;     // 24 * 3600
-export const SUNRISE_SECONDS = 19800; // 05:30 in-game sunrise time (5.5 * 3600)
-export const SUNSET_SECONDS = 72000;  // 20:00 in-game sunset time (20.0 * 3600)
+export const DAY_SECONDS      = 86400; // 24 * 3600
+export const SUNRISE_SECONDS  = 19800; // 05:30 in-game sunrise time (5.5 * 3600)
+export const SUNSET_SECONDS   = 72000; // 20:00 in-game sunset time (20.0 * 3600)
 
 export const normDayTime = (timeInSec: number): number =>
   ((timeInSec % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS;
